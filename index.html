@@ -3,376 +3,386 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ขนมแม่เตย - Official Digital Menu</title>
+    <title>ขนมแม่เตย - Official Menu</title>
     <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@100;300;400;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
     <style>
-        :root {
-            --bg-color: #ffffff;
-            --text-main: #2d3436;
-            --text-light: #636e72;
-            --accent: #d4af37; /* สีทองพรีเมียม */
-            --sub-accent: #e67e22; /* สีส้มทองกระตุ้นความอยากอาหาร */
-            --card-shadow: 0 10px 40px rgba(0,0,0,0.06);
-            --pink-soft: #fffafa;
-            --pink-border: #ffb1c1;
+        :root { --accent: #d4af37; --success: #28a745; --danger: #e74c3c; --black: #1a1a1a; --line-green: #06C755; }
+        body { font-family: 'Kanit', sans-serif; background: #fff; color: #333; margin: 0; padding-bottom: 120px; scroll-behavior: smooth; }
+        .container { max-width: 900px; margin: 0 auto; padding: 0 20px; }
+        
+        header { padding: 50px 20px; text-align: center; border-bottom: 1px solid #eee; background: linear-gradient(to bottom, #fffaf0, #fff); }
+        .logo-container { position: relative; display: inline-block; }
+        .logo { 
+            width: 130px; height: 130px; border-radius: 35px; 
+            box-shadow: 0 10px 30px rgba(212, 175, 55, 0.3); 
+            border: 4px solid var(--accent);
+            transition: all 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
         }
+        .logo:hover { transform: rotate(5deg) scale(1.1); }
 
-        body {
-            font-family: 'Kanit', sans-serif;
-            background-color: var(--bg-color);
-            color: var(--text-main);
-            margin: 0;
-            line-height: 1.6;
+        .member-banner { 
+            background: linear-gradient(135deg, #000 0%, #2c2c2c 100%); color: white; border-radius: 30px; 
+            padding: 35px 40px; display: flex; justify-content: space-between; align-items: center; margin: 30px 0;
+            position: relative; overflow: hidden; border: 2px solid var(--accent);
+            box-shadow: 0 15px 35px rgba(212, 175, 55, 0.25);
         }
-
-        header {
-            padding: 60px 20px 40px;
-            text-align: center;
-            background: linear-gradient(to bottom, #fffcf5, #ffffff);
+        .member-banner::after {
+            content: ""; position: absolute; top: -50%; left: -100%; width: 50%; height: 200%;
+            background: linear-gradient(90deg, transparent, rgba(212, 175, 55, 0.3), transparent);
+            transform: rotate(35deg); animation: shine 4s infinite linear;
         }
+        @keyframes shine { 100% { left: 200%; } }
+        .member-banner img { width: 160px; border-radius: 15px; transition: 0.3s; }
+        .member-banner:hover img { transform: scale(1.05) rotate(-2deg); }
 
-        .logo-container {
-            width: 180px; 
-            height: 180px; 
-            margin: 0 auto 20px;
-            border-radius: 40px;
-            overflow: hidden;
-            box-shadow: 0 15px 35px rgba(0,0,0,0.1);
-            border: 5px solid #fff;
+        .category-name { font-size: 1.6rem; margin: 45px 0 20px; border-left: 6px solid var(--accent); padding-left: 15px; font-weight: 600; }
+        .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 20px; }
+        
+        .highlight-card { 
+            grid-column: 1 / -1; display: flex; background: #fff; border: 3px solid var(--accent); 
+            border-radius: 35px; overflow: hidden; box-shadow: 0 20px 40px rgba(0,0,0,0.08); align-items: center; margin-bottom: 30px;
+            transition: 0.4s;
         }
+        .highlight-card:hover { transform: translateY(-5px); box-shadow: 0 25px 50px rgba(212, 175, 55, 0.15); }
+        .highlight-img { width: 40%; height: 320px; object-fit: cover; }
+        .highlight-info { padding: 30px; flex: 1; }
 
-        .logo-container img {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
+        .menu-card { 
+            border: 1px solid #eee; padding: 18px; border-radius: 25px; text-align: center; 
+            background: #fff; transition: all 0.3s ease; position: relative;
         }
-
-        header h1 {
-            font-size: 3rem;
-            font-weight: 600;
-            margin: 10px 0;
-            color: var(--text-main);
-            letter-spacing: -1px;
+        .menu-card:hover { transform: translateY(-10px); border-color: var(--accent); box-shadow: 0 15px 30px rgba(0,0,0,0.05); }
+        .item-img-box { width: 100%; height: 180px; border-radius: 18px; overflow: hidden; background: #f9f9f9; margin-bottom: 15px; display: flex; align-items: center; justify-content: center; position: relative; }
+        .item-img { width: 100%; height: 100%; object-fit: cover; transition: 0.5s; }
+        .menu-card:hover .item-img { transform: scale(1.1); }
+        .price { font-size: 1.8rem; color: #e67e22; font-weight: 700; }
+        
+        .btn-add { 
+            background: var(--black); color: white; border: none; padding: 12px; width: 100%; 
+            border-radius: 12px; cursor: pointer; font-family: 'Kanit'; margin-top: 10px; font-weight: 500;
+            transition: 0.2s;
         }
+        .btn-add:active { transform: scale(0.95); background: var(--accent); }
 
-        header p.tagline {
-            font-weight: 300;
-            letter-spacing: 5px;
-            color: var(--accent);
-            text-transform: uppercase;
-            font-size: 0.9rem;
+        #checkout-page { display: none; padding: 30px 0; background: #fafafa; }
+        .card { background: white; border-radius: 30px; padding: 30px; box-shadow: 0 5px 25px rgba(0,0,0,0.04); margin-bottom: 25px; border: 1px solid #eee; }
+        
+        .order-item { display: flex; justify-content: space-between; align-items: center; padding: 15px 0; border-bottom: 1px solid #f5f5f5; }
+        .qty-control { display: flex; align-items: center; gap: 5px; background: #f1f1f1; padding: 5px; border-radius: 12px; }
+        .qty-btn { width: 30px; height: 30px; border: none; background: #fff; border-radius: 8px; cursor: pointer; font-weight: bold; }
+        .num-input { width: 45px; text-align: center; border: none; background: transparent; font-family: 'Kanit'; font-weight: 600; }
+
+        .promo-badge { background: #ff4757; color: white; padding: 2px 10px; border-radius: 20px; font-size: 0.85rem; font-weight: 600; display: inline-block; margin-left: 5px; animation: pulse-red 1.5s infinite; }
+        @keyframes pulse-red { 0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(255, 71, 87, 0.7); } 70% { transform: scale(1.1); box-shadow: 0 0 0 10px rgba(255, 71, 87, 0); } 100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(255, 71, 87, 0); } }
+        
+        .btn-line { 
+            background: var(--line-green); color: white; border: none; padding: 22px; width: 100%; 
+            border-radius: 20px; cursor: pointer; font-family: 'Kanit'; font-size: 1.3rem; font-weight: 600; 
+            margin-top: 20px; transition: 0.3s; position: relative; overflow: hidden;
         }
-
-        .container { max-width: 1100px; margin: 0 auto; padding: 0 20px; }
-
-        /* Member Banner - ปรับเป็นภาษาไทยและดูน่าสนใจ */
-        .member-banner {
-            background: var(--pink-soft);
-            border-radius: 35px;
-            padding: 40px;
-            margin: 40px 0 60px;
-            display: flex;
-            align-items: center;
-            justify-content: space-around;
-            flex-wrap: wrap;
-            border: 2px solid var(--pink-border);
-            position: relative;
-            overflow: hidden;
+        .btn-line:not(:disabled) { animation: pulse-glow 2s infinite; }
+        @keyframes pulse-glow { 
+            0% { box-shadow: 0 0 0 0 rgba(6, 199, 85, 0.4); }
+            70% { box-shadow: 0 0 0 15px rgba(6, 199, 85, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(6, 199, 85, 0); }
         }
+        .btn-line:disabled { background: #ccc; cursor: not-allowed; opacity: 0.6; }
 
-        .member-text h2 { font-size: 1.4rem; color: var(--text-main); margin: 0; font-weight: 500; }
-        .member-text .promo { 
-            font-size: 4rem; 
-            font-weight: 600; 
-            color: #d63031;
-            margin: 5px 0;
-            line-height: 1;
-        }
-        .member-text p { font-size: 1.2rem; color: var(--text-light); margin: 10px 0 0; }
+        .floating-bar { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); width: 90%; max-width: 500px; background: #fff; padding: 15px 25px; border-radius: 25px; box-shadow: 0 10px 40px rgba(0,0,0,0.15); z-index: 1000; display: flex; justify-content: space-between; align-items: center; border: 1px solid #eee; animation: slideUp 0.5s ease; }
+        @keyframes slideUp { from { bottom: -100px; } to { bottom: 20px; } }
 
-        .member-img-container { max-width: 320px; }
-        .member-img-container img {
-            width: 100%;
-            border-radius: 20px;
-            box-shadow: 0 20px 40px rgba(0,0,0,0.12);
-            transform: rotate(-2deg);
-        }
-
-        .category-name {
-            font-size: 1.6rem;
-            color: var(--text-main);
-            margin: 80px 0 35px;
-            display: flex;
-            align-items: center;
-            font-weight: 600;
-        }
-        .category-name::before {
-            content: '';
-            width: 6px;
-            height: 35px;
-            background: var(--accent);
-            margin-right: 15px;
-            border-radius: 10px;
-        }
-
-        .grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-            gap: 30px;
-        }
-
-        .menu-card {
-            background: #fff;
-            padding: 25px;
-            border-radius: 30px;
-            text-align: center;
-            transition: all 0.4s cubic-bezier(0.165, 0.84, 0.44, 1);
-            border: 1px solid #f0f0f0;
-            box-shadow: var(--card-shadow);
-        }
-
-        .menu-card:hover {
-            transform: translateY(-12px);
-            box-shadow: 0 30px 60px rgba(0,0,0,0.1);
-            border-color: var(--accent);
-        }
-
-        .item-img-box {
-            width: 100%;
-            height: 220px;
-            border-radius: 20px;
-            margin-bottom: 20px;
-            overflow: hidden;
-            background: #fdfdfd;
-        }
-
-        .item-img {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-            transition: 0.5s;
-        }
-
-        .menu-card:hover .item-img { transform: scale(1.08); }
-
-        .menu-card h3 { font-size: 1.2rem; margin-bottom: 12px; font-weight: 400; color: var(--text-main); }
-        .menu-card .price { 
-            font-size: 2rem; 
-            font-weight: 600; 
-            color: var(--sub-accent);
-        }
-
-        /* Signature Highlight */
-        .highlight-card {
-            grid-column: 1 / -1;
-            display: flex;
-            align-items: center;
-            padding: 40px;
-            text-align: left;
-            background: linear-gradient(135deg, #fffcf5 0%, #ffffff 100%);
-            border: 2px solid #f9f1d7;
-        }
-
-        .highlight-img {
-            width: 450px;
-            height: 320px;
-            object-fit: cover;
-            border-radius: 25px;
-            margin-right: 50px;
-            box-shadow: 0 20px 40px rgba(0,0,0,0.08);
-        }
-
-        .highlight-info h3 { font-size: 2.8rem; margin: 0; color: #b08d24; font-weight: 600; }
-        .highlight-info .price { font-size: 4rem; color: var(--sub-accent); }
-
-        footer {
-            text-align: center;
-            padding: 100px 20px;
-            margin-top: 100px;
-            background: #fafafa;
-            border-top: 1px solid #eee;
-        }
-
-        .army-tag {
-            background: #27ae60;
-            padding: 15px 40px;
-            border-radius: 50px;
-            color: #fff;
-            font-weight: 500;
-            display: inline-block;
-            margin-bottom: 40px;
-            font-size: 1.1rem;
-            box-shadow: 0 10px 20px rgba(39, 174, 96, 0.2);
-        }
-
-        .production-box { margin-top: 50px; }
-        .prod-label { font-size: 0.8rem; color: #bbb; letter-spacing: 3px; margin-bottom: 8px; }
-        .prod-name { font-size: 1.3rem; font-weight: 600; color: var(--text-main); }
-
-        @media (max-width: 900px) {
-            .highlight-card { flex-direction: column; text-align: center; padding: 30px; }
-            .highlight-img { margin-right: 0; margin-bottom: 25px; width: 100%; height: auto; }
-        }
-
-        @media (max-width: 768px) {
-            header h1 { font-size: 2.5rem; }
-            .grid { grid-template-columns: 1fr 1fr; gap: 15px; }
-            .member-text .promo { font-size: 2.8rem; }
-            .menu-card { padding: 15px; border-radius: 20px; }
-            .item-img-box { height: 160px; }
-            .menu-card h3 { font-size: 1rem; }
-            .menu-card .price { font-size: 1.5rem; }
-        }
+        #map { height: 350px; border-radius: 25px; margin-top: 15px; border: 1px solid #ddd; }
+        .dist-alert { margin-top: 15px; padding: 20px; border-radius: 20px; font-weight: 600; text-align: center; font-size: 1.2rem; }
+        .dist-free { background: #f0fff4; color: var(--success); border: 2px solid var(--success); }
+        .dist-pay { background: #fff0f0; color: var(--danger); border: 2px solid var(--danger); }
     </style>
 </head>
 <body>
 
-<header>
-    <div class="logo-container">
-        <img src="https://img1.pic.in.th/images/----5.png" alt="ขนมแม่เตย Logo">
-    </div>
-    <h1>ขนมแม่เตย</h1>
-    <p class="tagline">Premium Homemade Bakery</p>
-</header>
-
-<div class="container">
-
-    <div class="member-banner">
-        <div class="member-text">
-            <h2>บัตรสมาชิกขนมแม่เตย</h2>
-            <div class="promo">ลดทันที 10%</div>
-            <p>เพียงสมัครวันนี้ 100.- เท่านั้น</p>
+<div id="main-page">
+    <header>
+        <div class="logo-container">
+            <img src="https://img1.pic.in.th/images/----5.png" class="logo">
         </div>
-        <div class="member-img-container">
-            <img src="https://img2.pic.in.th/Teal-Heart-Paws-Membership-ID-Card---1.png" alt="บัตรสมาชิก">
-        </div>
-    </div>
+        <h1 style="margin:15px 0 5px 0; font-size: 2.2rem; color: #2c3e50;">ขนมแม่เตย</h1>
+        <p style="color: #d4af37; font-weight: 500; font-size: 1.1rem; letter-spacing: 1px;">DELICIOUS HOMEMADE DESSERTS</p>
+        <p style="color: #888;">📞 080-9198962 | 082-4965250</p>
+    </header>
 
-    <div class="category-name">เมนูแนะนำ (Signature)</div>
-    <div class="grid">
-        <div class="menu-card highlight-card">
-            <img src="https://img1.pic.in.th/images/55489f826d4be6d9360cec99f01ad76c.jpg" alt="พุดดิ้งไข่มุกมะพร้าว" class="highlight-img">
-            <div class="highlight-info">
-                <h3>พุดดิ้งไข่มุกมะพร้าว</h3>
-                <p style="color: var(--text-light); font-size: 1.2rem;">เนื้อนุ่มละมุน หอมหวานมันจากมะพร้าวอ่อนแท้</p>
-                <div class="price">25 ฿</div>
+    <div class="container">
+        <div class="member-banner">
+            <div>
+                <h2 style="margin:0; font-size: 1.8rem; letter-spacing: 2px; color: var(--accent);">บัตรสมาชิกพิเศษ</h2>
+                <div style="background:var(--accent); color:black; padding:6px 18px; border-radius:10px; display:inline-block; margin:15px 0; font-weight: 800;">ลดทันที 10% ทุกรายการ</div>
+                <p style="margin:0; opacity:0.9;">สมัครเพียง 100.- เท่านั้น</p>
             </div>
+            <img src="https://img2.pic.in.th/Teal-Heart-Paws-Membership-ID-Card---1.png">
         </div>
-    </div>
 
-    <div class="category-name">เค้กปอนด์ (Cakes - 1 Pound)</div>
-    <div class="grid">
-        <div class="menu-card">
-            <div class="item-img-box"><img src="https://img1.pic.in.th/images/0061726d8d1a9b9a64751c87728ec416.jpg" class="item-img" alt="เค้กสตรอว์เบอร์รี่"></div>
-            <h3>เค้กสตรอว์เบอร์รี่</h3><div class="price">300 ฿</div>
-        </div>
-        <div class="menu-card">
-            <div class="item-img-box"><img src="https://img2.pic.in.th/b3f43170eedba02532e30fbb2d9f0249.jpg" class="item-img" alt="เค้กช็อกโกแลต"></div>
-            <h3>เค้กช็อกโกแลต</h3><div class="price">300 ฿</div>
-        </div>
-        <div class="menu-card">
-            <div class="item-img-box"><img src="https://img1.pic.in.th/images/1270c36df7036118a362335427796a7f.jpg" class="item-img" alt="เค้กนมฮอกไกโด"></div>
-            <h3>เค้กนมฮอกไกโด</h3><div class="price">300 ฿</div>
-        </div>
-        <div class="menu-card">
-            <div class="item-img-box"><img src="https://img2.pic.in.th/a73be15b7cc7cd5fbfc393459295bdf2.jpg" class="item-img" alt="เค้กมะพร้าวออริจินัล"></div>
-            <h3>เค้กมะพร้าว (ออริจินัล)</h3><div class="price">300 ฿</div>
-        </div>
-        <div class="menu-card">
-            <div class="item-img-box" style="display:flex; align-items:center; justify-content:center; background:#f9f9f9; color:#ddd;">PREMIUM</div>
-            <h3>เค้กมะพร้าวอ่อน พรีเมี่ยม</h3><div class="price">400 ฿</div>
-        </div>
-        <div class="menu-card">
-            <div class="item-img-box" style="display:flex; align-items:center; justify-content:center; background:#f9f9f9; color:#ddd;">CLASSIC</div>
-            <h3>เค้กทีรามิสุ</h3><div class="price">500 ฿</div>
-        </div>
-    </div>
+        <div id="menu-content"></div>
 
-    <div class="category-name">เค้กชิ้นและมินิ (Mini & Slices)</div>
-    <div class="grid">
-        <div class="menu-card">
-            <div class="item-img-box"><img src="https://img2.pic.in.th/IMG_3305.jpg" class="item-img" alt="เค้กรวมรส"></div>
-            <h3>เค้กรวมรส (6 ชิ้น)</h3><div class="price">350 ฿</div>
-        </div>
-        <div class="menu-card">
-            <div class="item-img-box"><img src="https://img2.pic.in.th/72b44781a63e18942dae48cd179f64eb.jpg" class="item-img" alt="เค้กทีรามิสุชิ้น"></div>
-            <h3>เค้กทีรามิสุ (ชิ้น)</h3><div class="price">75 ฿</div>
-        </div>
-        <div class="menu-card">
-            <div class="item-img-box"><img src="https://img2.pic.in.th/2c2242f58dfc8305d1e98e4efb31b854.jpg" class="item-img" alt="เค้กส้ม"></div>
-            <h3>เค้กส้ม (ชิ้น)</h3><div class="price">60 ฿</div>
-        </div>
-        <div class="menu-card">
-            <div class="item-img-box"><img src="https://img1.pic.in.th/images/eee147e03fd2e411c3bb5de448ae2e50.jpg" class="item-img" alt="เค้กมะพร้าวชิ้น"></div>
-            <h3>เค้กมะพร้าว (ชิ้น)</h3><div class="price">60 ฿</div>
-        </div>
-        <div class="menu-card">
-            <div class="item-img-box"><img src="https://img1.pic.in.th/images/44a129894deea448307b33779efafc50.jpg" class="item-img" alt="เค้กลอดช่อง"></div>
-            <h3>เค้กลอดช่อง (ชิ้น)</h3><div class="price">60 ฿</div>
-        </div>
-        <div class="menu-card">
-            <div class="item-img-box"><img src="https://img2.pic.in.th/06a99da296204ae982ed5ecd8b0d9c02.jpg" class="item-img" alt="เค้กช็อกชิ้น"></div>
-            <h3>เค้กช็อกโกแลต (ชิ้น)</h3><div class="price">60 ฿</div>
-        </div>
-        <div class="menu-card">
-            <div class="item-img-box" style="display:flex; align-items:center; justify-content:center; background:#f9f9f9; color:#ddd;">FRUIT</div>
-            <h3>เค้กสตรอว์เบอร์รี่ (ชิ้น)</h3><div class="price">60 ฿</div>
-        </div>
+        <footer style="margin: 50px 0; text-align: center;">
+            <div style="background:#f1f8e9; padding:20px; border-radius:20px; color:#388e3c; font-weight:600; margin-bottom:15px;">🎖️ สำหรับทหารผ่านศึก รับไอศกรีมฟรี 1 ถ้วย</div>
+            <p style="color:#ccc;">PRODUCTION BY ขนมแม่เตย</p>
+        </footer>
     </div>
-
-    <div class="category-name">ของหวาน (Desserts)</div>
-    <div class="grid">
-        <div class="menu-card">
-            <div class="item-img-box"><img src="https://img2.pic.in.th/297c3ae408bdaba1dfb5fe850980a75d.jpg" class="item-img" alt="ฮันนี่โทสต์ กะทิสด"></div>
-            <h3>ฮันนี่โทสต์ กะทิสด</h3><div class="price">150 ฿</div>
-        </div>
-        <div class="menu-card">
-            <div class="item-img-box"><img src="https://img1.pic.in.th/images/bec330244e671528875aefe157d36099.jpg" class="item-img" alt="ฮันนี่โทสต์ ชาไทย"></div>
-            <h3>ฮันนี่โทสต์ ชาไทย</h3><div class="price">150 ฿</div>
-        </div>
-        <div class="menu-card">
-            <div class="item-img-box"><img src="https://img2.pic.in.th/c3261a2b7656123d7824550e01c98379.jpg" class="item-img" alt="ลูกตาลลอยแก้ว"></div>
-            <h3>ลูกตาลลอยแก้ว</h3><div class="price">40 ฿</div>
-        </div>
-        <div class="menu-card">
-            <div class="item-img-box"><img src="https://img1.pic.in.th/images/a15517b90fe10d7ad1edd84ee4b3bcf4.jpg" class="item-img" alt="สละลอยแก้ว"></div>
-            <h3>สละลอยแก้ว</h3><div class="price">40 ฿</div>
-        </div>
-        <div class="menu-card">
-            <div class="item-img-box"><img src="https://img1.pic.in.th/images/12182067dd20f565aa4be5129a3779f6.jpg" class="item-img" alt="เมล่อนนมสด"></div>
-            <h3>เมล่อนนมสด</h3><div class="price">40 ฿</div>
-        </div>
-        <div class="menu-card">
-            <div class="item-img-box"><img src="https://img2.pic.in.th/84a1180bb779d9991661b7f983242efe.jpg" class="item-img" alt="วุ้นมะพร้าว"></div>
-            <h3>วุ้นมะพร้าว</h3><div class="price">40 ฿</div>
-        </div>
-    </div>
-
-    <div class="category-name">ไอศกรีมโฮมเมด (Homemade Ice Cream)</div>
-    <div class="grid">
-        <div class="menu-card"><h3>รสกะทิ</h3><div class="price">40 ฿</div></div>
-        <div class="menu-card"><h3>รสทุเรียน</h3><div class="price">40 ฿</div></div>
-        <div class="menu-card"><h3>รสช็อกโกแลต</h3><div class="price">40 ฿</div></div>
-        <div class="menu-card"><h3>รสเผือก</h3><div class="price">40 ฿</div></div>
-        <div class="menu-card"><h3>รสมะนาว</h3><div class="price">40 ฿</div></div>
-        <div class="menu-card"><h3>รสชาไทย</h3><div class="price">40 ฿</div></div>
-        <div class="menu-card"><h3>รสนมฮอกไกโด</h3><div class="price">40 ฿</div></div>
-        <div class="menu-card"><h3>รสสตรอว์เบอร์รี่</h3><div class="price">40 ฿</div></div>
-    </div>
-
 </div>
 
-<footer>
-    <div class="army-tag">🎖️ สำหรับทหารผ่านศึก รับไอศกรีมฟรี 1 ถ้วย</div>
-    <p style="font-weight: 300; font-size: 1.1rem; color: var(--text-light);">
-        โทรสั่งขนม: 080-9198962 | 082-4965250
-    </p>
-    
-    <div class="production-box">
-        <div class="prod-label">PRODUCTION BY</div>
-        <div class="prod-name">ขนมแม่เตย</div>
-    </div>
-</footer>
+<div id="checkout-page">
+    <div class="container" style="max-width: 700px;">
+        <button onclick="backToMenu()" style="background:none; border:none; color:#888; cursor:pointer; margin-bottom:15px; font-family:'Kanit';">← กลับไปเลือกขนมเพิ่ม</button>
+        
+        <div class="card">
+            <h3 style="margin:0 0 15px 0;">🛒 รายการที่สั่งซื้อ</h3>
+            <div id="order-list"></div>
+        </div>
 
+        <div class="card">
+            <h3 style="margin:0 0 15px 0;">📍 ระบุที่อยู่จัดส่ง</h3>
+            <div class="coord-box" style="display:flex; gap:10px; margin-bottom:15px;">
+                <input type="text" id="manual-coords" placeholder="วางพิกัดละติจูด,ลองจิจูด" style="flex:1; padding:15px; border-radius:12px; border:1px solid #ddd; font-family:'Kanit';">
+                <button onclick="goToCoords()" style="background:var(--black); color:white; border:none; padding:0 20px; border-radius:12px; cursor:pointer; font-family:'Kanit';">ค้นหา</button>
+            </div>
+            <div id="map"></div>
+            <div id="dist-alert-box" class="dist-alert">ปักหมุดเพื่อคำนวณค่าส่ง</div>
+        </div>
+
+        <div class="card">
+            <h3 style="margin:0 0 20px 0;">👤 ข้อมูลผู้รับ</h3>
+            <div style="margin-bottom:15px;"><label>ชื่อผู้รับ *</label><input type="text" id="c-name" style="width:100%; padding:14px; border-radius:12px; border:1px solid #ddd; box-sizing:border-box; font-family:'Kanit';" oninput="validateForm()"></div>
+            <div style="margin-bottom:15px;"><label>เบอร์โทรศัพท์ *</label><input type="tel" id="c-tel" style="width:100%; padding:14px; border-radius:12px; border:1px solid #ddd; box-sizing:border-box; font-family:'Kanit';" oninput="validateForm()"></div>
+            <div style="margin-bottom:15px;">
+                <label>วันที่รับสินค้า *</label>
+                <input type="date" id="del-date" style="width:100%; padding:14px; border-radius:12px; border:1px solid #ddd; box-sizing:border-box; font-family:'Kanit';" onchange="validateForm()">
+                <span style="color: var(--danger); font-size: 0.9rem; margin-top: 8px; display: block; font-weight: 500; background: #fff5f5; padding: 8px 12px; border-radius: 10px; border: 1px solid #ffcfcf;">⚠️ กรุณาสั่งล่วงหน้า 1-3 วันนะครับ</span>
+            </div>
+        </div>
+
+        <div class="card" style="text-align:center;">
+            <h3 style="margin:0;">💰 สรุปยอดโอนเงิน</h3>
+            <div style="background: #f8f9fa; border-radius: 25px; padding: 25px; border: 1px solid #eee; margin-top: 20px;">
+                <div style="display: flex; justify-content: space-between; margin-bottom: 10px;"><span>ค่าขนม:</span><span id="sub-val">0</span> ฿</div>
+                <div style="display: flex; justify-content: space-between; margin-bottom: 10px;"><span>ค่าส่ง:</span><span id="ship-val">0</span> ฿</div>
+                <div style="font-size: 2.5rem; font-weight: 800; color: #e67e22; border-top: 2px solid #eee; padding-top: 15px; margin-top: 10px; display: flex; justify-content: space-between;"><span>ยอดรวม:</span><span id="total-val">0</span> ฿</div>
+            </div>
+            <img src="https://img2.pic.in.th/S__140738563.jpg" style="width:200px; border-radius:20px; margin:25px 0; border:1px solid #eee;">
+            <div style="margin-bottom:20px; text-align:left;">
+                <label>📸 แนบสลิปการโอนเงิน *</label>
+                <input type="file" id="slip-file" accept="image/*" onchange="validateForm()" style="margin-top:10px; width:100%;">
+            </div>
+            <p id="err-msg" style="color:var(--danger); font-weight:500; margin-bottom:10px;">⚠️ กรุณากรอกข้อมูล ปักหมุด และแนบสลิปให้ครบ</p>
+            <button id="line-btn" class="btn-line" onclick="sendToLine()" disabled>ยืนยันออเดอร์และส่งหลักฐาน</button>
+        </div>
+    </div>
+</div>
+
+<div class="floating-bar" id="cart-bar" style="display:none;">
+    <div>ตะกร้า: <b id="cart-qty" style="color:var(--accent);">0</b> ชิ้น</div>
+    <button onclick="goToCheckout()" style="background:var(--success); color:white; border:none; padding:12px 25px; border-radius:15px; cursor:pointer; font-weight:600; font-family:'Kanit';">สรุปยอดออเดอร์ ></button>
+</div>
+
+<script>
+    const SHOP_POS = [13.712533, 101.350077];
+    const products = [
+        { cat: 'เมนูแนะนำ (Signature)', isHighlight: true, items: [
+            {n:'พุดดิ้งไข่มุกมะพร้าว', p:25, img:'https://img1.pic.in.th/images/55489f826d4be6d9360cec99f01ad76c.jpg', desc:'เนื้อนุ่มละมุน หอมหวานมันจากมะพร้าวอ่อนแท้'}
+        ]},
+        { cat: 'เค้กปอนด์ (Cakes - 1 Pound)', items: [
+            {n:'เค้กสตรอว์เบอร์รี่', p:300, img:'https://img1.pic.in.th/images/S__19300393.jpg'},
+            {n:'เค้กช็อกโกแลต', p:300, img:'https://img2.pic.in.th/b3f43170eedba02532e30fbb2d9f0249.jpg'},
+            {n:'เค้กนมฮอกไกโด', p:300, img:'https://img1.pic.in.th/images/416d606c6e1c95dd24645ef2859c75a2.jpg'},
+            {n:'เค้กมะพร้าว (ออริจินัล)', p:300, img:'https://img2.pic.in.th/a73be15b7cc7cd5fbfc393459295bdf2.jpg'},
+            {n:'เค้กมะพร้าวอ่อน พรีเมี่ยม', p:400, img:'https://img1.pic.in.th/images/75ead986e91c4cc70b390b9ed29ef76b.jpg', label:'PREMIUM'},
+            {n:'เค้กทีรามิสุ', p:500, img:'https://img2.pic.in.th/S__19300386.jpg', label:'CLASSIC'}
+        ]},
+        { cat: 'เค้กชิ้นและมินิ (Mini & Slices)', items: [
+            {n:'เค้กรวมรส (6 ชิ้น)', p:350, img:'https://img2.pic.in.th/IMG_3305.jpg'},
+            {n:'เค้กทีรามิสุ (ชิ้น)', p:75, img:'https://img2.pic.in.th/72b44781a63e18942dae48cd179f64eb.jpg'},
+            {n:'เค้กส้ม (ชิ้น)', p:60, img:'https://img2.pic.in.th/2c2242f58dfc8305d1e98e4efb31b854.jpg'},
+            {n:'เค้กมะพร้าว (ชิ้น)', p:60, img:'https://img1.pic.in.th/images/eee147e03fd2e411c3bb5de448ae2e50.jpg'},
+            {n:'เค้กลอดช่อง (ชิ้น)', p:60, img:'https://img1.pic.in.th/images/44a129894deea448307b33779efafc50.jpg'},
+            {n:'เค้กช็อกโกแลต (ชิ้น)', p:60, img:'https://img2.pic.in.th/06a99da296204ae982ed5ecd8b0d9c02.jpg'},
+            {n:'เค้กสตรอว์เบอร์รี่ (ชิ้น)', p:60, img:'https://img1.pic.in.th/images/S__19300406.jpg', label:'FRUIT'}
+        ]},
+        { cat: 'ของหวาน (Desserts)', items: [
+            {n:'ฮันนี่โทสต์ กะทิสด', p:150, img:'https://img2.pic.in.th/297c3ae408bdaba1dfb5fe850980a75d.jpg'},
+            {n:'ฮันนี่โทสต์ ชาไทย', p:150, img:'https://img1.pic.in.th/images/bec330244e671528875aefe157d36099.jpg'},
+            {n:'ลูกตาลลอยแก้ว', p:40, img:'https://img2.pic.in.th/c3261a2b7656123d7824550e01c98379.jpg'},
+            {n:'สละลอยแก้ว', p:40, img:'https://img1.pic.in.th/images/a15517b90fe10d7ad1edd84ee4b3bcf4.jpg'},
+            {n:'เมล่อนนมสด', p:40, img:'https://img1.pic.in.th/images/12182067dd20f565aa4be5129a3779f6.jpg'},
+            {n:'วุ้นมะพร้าว', p:40, img:'https://img2.pic.in.th/84a1180bb779d9991661b7f983242efe.jpg'}
+        ]},
+        { cat: 'ไอศกรีมโฮมเมด (Homemade Ice Cream)', items: [
+            {n:'รสกะทิ', p:40}, {n:'รสทุเรียน', p:40}, {n:'รสช็อกโกแลต', p:40}, {n:'รสเผือก', p:40}, {n:'รสมะนาว', p:40}, {n:'รสชาไทย', p:40}, {n:'รสนมฮอกไกโด', p:40}, {n:'รสสตรอว์เบอร์รี่', p:40}
+        ]}
+    ];
+
+    let cart = {};
+    let userPos = null;
+
+    function renderMenu() {
+        const container = document.getElementById('menu-content');
+        products.forEach(g => {
+            let h = `<div class="category-name">${g.cat}</div>`;
+            if(g.isHighlight) {
+                h += `<div class="highlight-card">
+                    <img src="${g.items[0].img}" class="highlight-img">
+                    <div class="highlight-info">
+                        <h3>${g.items[0].n}</h3>
+                        <p style="color:#666;">${g.items[0].desc}</p>
+                        <div class="price">${g.items[0].p} ฿</div>
+                        <button class="btn-add" onclick="addToCart('${g.items[0].n}', ${g.items[0].p})" style="background:var(--accent); padding:15px; font-size:1.1rem;">+ ใส่ตะกร้า</button>
+                    </div>
+                </div>`;
+            } else {
+                h += `<div class="grid">`;
+                g.items.forEach(i => {
+                    h += `<div class="menu-card">
+                        <div class="item-img-box">${i.img ? `<img src="${i.img}" class="item-img">` : `<div style="color:#ddd; font-weight:bold;">${i.label || 'NO IMG'}</div>`}</div>
+                        <h3>${i.n}</h3><div class="price">${i.p} ฿</div>
+                        <button class="btn-add" onclick="addToCart('${i.n}', ${i.p})">+ ใส่ตะกร้า</button>
+                    </div>`;
+                });
+                h += `</div>`;
+            }
+            container.innerHTML += h;
+        });
+    }
+
+    function addToCart(n, p) { 
+        if(!cart[n]) cart[n] = { p: p, q: 1 }; else cart[n].q++; 
+        updateCartBar();
+    }
+
+    function updateCartBar() { 
+        let q = Object.values(cart).reduce((a, b) => a + b.q, 0);
+        const bar = document.getElementById('cart-bar');
+        document.getElementById('cart-qty').innerText = q;
+        bar.style.display = q > 0 ? 'flex' : 'none';
+    }
+
+    function updateSummary() {
+        const list = document.getElementById('order-list'); list.innerHTML = "";
+        let sub = 0;
+        for(let n in cart) {
+            let isPromo = (n === 'พุดดิ้งไข่มุกมะพร้าว' && cart[n].q >= 50);
+            let p = isPromo ? 20 : cart[n].p;
+            let total = p * cart[n].q; sub += total;
+            list.innerHTML += `<div class="order-item" style="${isPromo ? 'background:#fff9f9; border-radius:15px; padding:10px;' : ''}">
+                <div style="flex:1;">
+                    <b>${n}</b><br>
+                    <span style="${isPromo ? 'color:#ff4757; font-weight:800;' : ''}">${p} ฿/ชิ้น</span>
+                    ${isPromo ? '<span class="promo-badge">ลดพิเศษ 20.- 🔥</span>' : ''}
+                </div>
+                <div class="qty-control">
+                    <button class="qty-btn" onclick="changeQty('${n}',-1)">-</button>
+                    <input type="number" class="num-input" value="${cart[n].q}" onchange="setQty('${n}',this.value)">
+                    <button class="qty-btn" onclick="changeQty('${n}',1)">+</button>
+                </div>
+                <b style="width:80px; text-align:right;">${total.toLocaleString()} ฿</b>
+            </div>`;
+        }
+
+        let ship = 0;
+        const alertBox = document.getElementById('dist-alert-box');
+        if(userPos) {
+            let d = map.distance(SHOP_POS, userPos) / 1000;
+            if(d <= 10) {
+                ship = 0; alertBox.className = "dist-alert dist-free";
+                alertBox.innerHTML = `✅ ระยะทาง: ${d.toFixed(1)} กม. (ส่งฟรี!)`;
+            } else {
+                ship = 33 + Math.ceil((d - 10) * 12);
+                alertBox.className = "dist-alert dist-pay";
+                alertBox.innerHTML = `📍 ระยะทาง: ${d.toFixed(1)} กม. (ค่าส่งเพิ่มเติม ${ship} ฿)`;
+            }
+        }
+        document.getElementById('sub-val').innerText = sub.toLocaleString();
+        document.getElementById('ship-val').innerText = ship.toLocaleString();
+        document.getElementById('total-val').innerText = (sub + ship).toLocaleString();
+        validateForm();
+    }
+
+    function changeQty(n, v) { cart[n].q += v; if(cart[n].q <= 0) delete cart[n]; updateSummary(); updateCartBar(); }
+    function setQty(n, v) { let q = parseInt(v); if(isNaN(q) || q <= 0) delete cart[n]; else cart[n].q = q; updateSummary(); updateCartBar(); }
+
+    function validateForm() {
+        const hasSlip = document.getElementById('slip-file').files.length > 0;
+        const ok = document.getElementById('c-name').value && document.getElementById('c-tel').value && document.getElementById('del-date').value && userPos && hasSlip;
+        document.getElementById('line-btn').disabled = !ok;
+        document.getElementById('err-msg').style.display = ok ? 'none' : 'block';
+    }
+
+    const map = L.map('map').setView(SHOP_POS, 13);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
+    let marker = L.marker(SHOP_POS, {draggable:true});
+    map.on('click', e => { userPos = [e.latlng.lat, e.latlng.lng]; marker.addTo(map).setLatLng(e.latlng); updateSummary(); });
+
+    function goToCoords() {
+        let val = document.getElementById('manual-coords').value;
+        let p = val.split(',').map(x => parseFloat(x.trim()));
+        if(p.length === 2 && !isNaN(p[0])) {
+            userPos = p; marker.addTo(map).setLatLng(p); map.setView(p, 15); updateSummary();
+        }
+    }
+
+    function goToCheckout() { document.getElementById('main-page').style.display='none'; document.getElementById('checkout-page').style.display='block'; window.scrollTo(0,0); setTimeout(()=>map.invalidateSize(), 400); updateSummary(); }
+    function backToMenu() { document.getElementById('checkout-page').style.display='none'; document.getElementById('main-page').style.display='block'; }
+
+    // ฟังก์ชันส่งไป LINE (เวอร์ชันแก้ไขใหม่: ใช้ Line URL Scheme ข้ามหน้าสแกน QR)
+    function sendToLine() {
+        const btn = document.getElementById('line-btn');
+        const oldText = btn.innerText;
+        btn.innerText = "⏳ กำลังเตรียมออเดอร์...";
+        
+        let items = "";
+        for(let n in cart) {
+            let isPromo = (n === 'พุดดิ้งไข่มุกมะพร้าว' && cart[n].q >= 50);
+            let p = isPromo ? 20 : cart[n].p;
+            items += `- ${n} x ${cart[n].q} (${(p * cart[n].q).toLocaleString()}฿)${isPromo ? ' [โปรฯ 20.-]' : ''}\n`;
+        }
+
+        let msg = `✨ สั่งซื้อขนมแม่เตย (แจ้งโอน) ✨\n`;
+        msg += `----------------------------\n`;
+        msg += `📅 วันที่ส่ง: ${document.getElementById('del-date').value}\n`;
+        msg += `รายการขนม:\n${items}`;
+        msg += `----------------------------\n`;
+        msg += `💰 ค่าขนม: ${document.getElementById('sub-val').innerText} ฿\n`;
+        msg += `🚚 ค่าส่ง: ${document.getElementById('ship-val').innerText} ฿\n`;
+        msg += `🔥 ยอดรวมทั้งสิ้น: ${document.getElementById('total-val').innerText} ฿\n`;
+        msg += `----------------------------\n`;
+        msg += `👤 ผู้รับ: ${document.getElementById('c-name').value}\n`;
+        msg += `📞 เบอร์: ${document.getElementById('c-tel').value}\n`;
+        msg += `📍 พิกัดส่ง: https://www.google.com/maps?q=${userPos[0]},${userPos[1]}`;
+
+        // 1. คัดลอกข้อความ
+        navigator.clipboard.writeText(msg).then(() => {
+            // 2. พลุฉลอง
+            confetti({ particleCount: 150, spread: 70, origin: { y: 0.6 }, colors: ['#d4af37', '#06C755', '#ffffff'] });
+
+            setTimeout(() => {
+                // 3. แจ้งลูกค้า
+                alert("✅ คัดลอกออเดอร์แล้ว!\n\nระบบจะเปิด LINE ร้านให้คุณ ให้คุณกด 'วาง' (Paste) และส่ง 'รูปสลิป' ได้เลยครับ");
+                
+                // 4. บังคับเปิดแอป LINE โดยตรง (ใช้ ti/p/ สำหรับแอดเพื่อน)
+                const lineId = '0809198962';
+                window.location.href = `line://ti/p/~${lineId}`;
+                
+                // Fallback: หากผ่านไป 2 วินาทีแล้วไม่มีแอปเด้ง ให้เปิดหน้าเว็บปกติ
+                setTimeout(() => {
+                    if (document.hasFocus()) {
+                        window.open(`https://line.me/ti/p/~${lineId}`, '_blank');
+                    }
+                }, 2000);
+
+                btn.innerText = oldText;
+            }, 800);
+        });
+    }
+
+    renderMenu();
+</script>
 </body>
 </html>
