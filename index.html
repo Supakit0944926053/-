@@ -46,6 +46,7 @@
             border-radius: 35px; overflow: hidden; box-shadow: 0 20px 40px rgba(0,0,0,0.08); align-items: center; margin-bottom: 30px;
             transition: 0.4s;
         }
+        @media (max-width: 600px) { .highlight-card { flex-direction: column; } .highlight-img { width: 100% !important; height: 200px !important; } }
         .highlight-card:hover { transform: translateY(-5px); box-shadow: 0 25px 50px rgba(212, 175, 55, 0.15); }
         .highlight-img { width: 40%; height: 320px; object-fit: cover; }
         .highlight-info { padding: 30px; flex: 1; }
@@ -98,6 +99,23 @@
         .dist-alert { margin-top: 15px; padding: 20px; border-radius: 20px; font-weight: 600; text-align: center; font-size: 1.2rem; }
         .dist-free { background: #f0fff4; color: var(--success); border: 2px solid var(--success); }
         .dist-pay { background: #fff0f0; color: var(--danger); border: 2px solid var(--danger); }
+
+        .modal-overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.85); z-index: 9999; display: none;
+            align-items: center; justify-content: center; padding: 20px;
+        }
+        .instruction-card {
+            background: white; border-radius: 35px; width: 100%; max-width: 400px;
+            padding: 35px; text-align: center; position: relative; animation: popScale 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+        @keyframes popScale { from { transform: scale(0.7); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+        .step-box { display: flex; align-items: flex-start; gap: 15px; text-align: left; margin-bottom: 25px; }
+        .step-num { 
+            background: var(--line-green); color: white; width: 32px; height: 32px; 
+            border-radius: 50%; display: flex; align-items: center; justify-content: center; 
+            flex-shrink: 0; font-weight: bold; font-size: 1.1rem;
+        }
     </style>
 </head>
 <body>
@@ -125,8 +143,11 @@
         <div id="menu-content"></div>
 
         <footer style="margin: 50px 0; text-align: center;">
-            <div style="background:#f1f8e9; padding:20px; border-radius:20px; color:#388e3c; font-weight:600; margin-bottom:15px;">🎖️ สำหรับทหารผ่านศึก รับไอศกรีมฟรี 1 ถ้วย</div>
-            <p style="color:#ccc;">PRODUCTION BY ขนมแม่เตย</p>
+            <div style="background:#f1f8e9; padding:25px; border-radius:25px; color:#388e3c; font-weight:600; margin-bottom:20px; border: 2px dashed #388e3c;">
+                🎖️ สิทธิพิเศษสำหรับทหารผ่านศึก<br>
+                <span style="font-size: 1.2rem;">รับไอศกรีมฟรีทันที 1 ถ้วย</span>
+            </div>
+            <p style="color:#bbb; font-size: 0.9rem;">PRODUCTION BY ขนมแม่เตย</p>
         </footer>
     </div>
 </div>
@@ -184,6 +205,40 @@
     <button onclick="goToCheckout()" style="background:var(--success); color:white; border:none; padding:12px 25px; border-radius:15px; cursor:pointer; font-weight:600; font-family:'Kanit';">สรุปยอดออเดอร์ ></button>
 </div>
 
+<div id="guide-modal" class="modal-overlay">
+    <div class="instruction-card">
+        <h2 style="margin-top:0; color: var(--line-green);">ออเดอร์พร้อมส่งแล้ว!</h2>
+        <p style="color:#666; margin-bottom: 25px;">ระบบคัดลอกรายการขนมไว้ให้คุณแล้วครับ<br>ทำตามขั้นตอนง่ายๆ ด้านล่างนี้ได้เลย</p>
+        
+        <div class="step-box">
+            <div class="step-num">1</div>
+            <div>
+                <b>เลือกแชท "ขนมแม่เตย"</b><br>
+                <small style="color:#888;">เมื่อเข้าหน้า LINE ให้เลือกชื่อร้านเพื่อส่งข้อมูล</small>
+            </div>
+        </div>
+
+        <div class="step-box">
+            <div class="step-num">2</div>
+            <div>
+                <b>กด "แชร์" หรือ "วางข้อความ"</b><br>
+                <small style="color:#888;">ออเดอร์จะถูกส่งเข้าแชทร้านทันที</small>
+            </div>
+        </div>
+
+        <div class="step-box">
+            <div class="step-num">3</div>
+            <div>
+                <b>ส่ง "รูปสลิป" ตามเข้าไป</b><br>
+                <small style="color:#888;">ส่งรูปสลิปในแชทเพื่อให้ร้านตรวจสอบเป็นขั้นตอนสุดท้าย</small>
+            </div>
+        </div>
+
+        <button onclick="realJumpToLine()" class="btn-line" style="margin-top:10px;">ตกลง...ไปที่ LINE</button>
+        <p style="margin-top:15px; font-size:0.8rem; color:#ccc; cursor:pointer;" onclick="document.getElementById('guide-modal').style.display='none'">ยกเลิก</p>
+    </div>
+</div>
+
 <script>
     const SHOP_POS = [13.712533, 101.350077];
     const products = [
@@ -216,22 +271,24 @@
             {n:'วุ้นมะพร้าว', p:40, img:'https://img2.pic.in.th/84a1180bb779d9991661b7f983242efe.jpg'}
         ]},
         { cat: 'ไอศกรีมโฮมเมด (Homemade Ice Cream)', items: [
-            {n:'รสกะทิ', p:40}, {n:'รสทุเรียน', p:40}, {n:'รสช็อกโกแลต', p:40}, {n:'รสเผือก', p:40}, {n:'รสมะนาว', p:40}, {n:'รสชาไทย', p:40}, {n:'รสนมฮอกไกโด', p:40}, {n:'รสสตรอว์เบอร์รี่', p:40}
+            {n:'ไอศกรีม รสกะทิ', p:40}, {n:'ไอศกรีม รสทุเรียน', p:40}, {n:'ไอศกรีม รสช็อกโกแลต', p:40}, {n:'ไอศกรีม รสเผือก', p:40}, {n:'ไอศกรีม รสมะนาว', p:40}, {n:'ไอศกรีม รสชาไทย', p:40}, {n:'ไอศกรีม รสนมฮอกไกโด', p:40}, {n:'ไอศกรีม รสสตรอว์เบอร์รี่', p:40}
         ]}
     ];
 
     let cart = {};
     let userPos = null;
+    let pendingMsg = "";
 
     function renderMenu() {
         const container = document.getElementById('menu-content');
+        container.innerHTML = "";
         products.forEach(g => {
             let h = `<div class="category-name">${g.cat}</div>`;
             if(g.isHighlight) {
                 h += `<div class="highlight-card">
                     <img src="${g.items[0].img}" class="highlight-img">
                     <div class="highlight-info">
-                        <h3>${g.items[0].n}</h3>
+                        <h3 style="margin-top:0;">${g.items[0].n}</h3>
                         <p style="color:#666;">${g.items[0].desc}</p>
                         <div class="price">${g.items[0].p} ฿</div>
                         <button class="btn-add" onclick="addToCart('${g.items[0].n}', ${g.items[0].p})" style="background:var(--accent); padding:15px; font-size:1.1rem;">+ ใส่ตะกร้า</button>
@@ -241,8 +298,8 @@
                 h += `<div class="grid">`;
                 g.items.forEach(i => {
                     h += `<div class="menu-card">
-                        <div class="item-img-box">${i.img ? `<img src="${i.img}" class="item-img">` : `<div style="color:#ddd; font-weight:bold;">${i.label || 'NO IMG'}</div>`}</div>
-                        <h3>${i.n}</h3><div class="price">${i.p} ฿</div>
+                        <div class="item-img-box">${i.img ? `<img src="${i.img}" class="item-img">` : `<div style="color:#aaa; font-weight:bold; font-size:1.2rem;">🍦<br>${i.n}</div>`}</div>
+                        <h3 style="font-size:1.1rem; margin:10px 0;">${i.n}</h3><div class="price" style="font-size:1.4rem;">${i.p} ฿</div>
                         <button class="btn-add" onclick="addToCart('${i.n}', ${i.p})">+ ใส่ตะกร้า</button>
                     </div>`;
                 });
@@ -331,12 +388,7 @@
     function goToCheckout() { document.getElementById('main-page').style.display='none'; document.getElementById('checkout-page').style.display='block'; window.scrollTo(0,0); setTimeout(()=>map.invalidateSize(), 400); updateSummary(); }
     function backToMenu() { document.getElementById('checkout-page').style.display='none'; document.getElementById('main-page').style.display='block'; }
 
-    // ฟังก์ชันส่งไป LINE (เวอร์ชันแก้ไขใหม่: ใช้ Line URL Scheme ข้ามหน้าสแกน QR)
     function sendToLine() {
-        const btn = document.getElementById('line-btn');
-        const oldText = btn.innerText;
-        btn.innerText = "⏳ กำลังเตรียมออเดอร์...";
-        
         let items = "";
         for(let n in cart) {
             let isPromo = (n === 'พุดดิ้งไข่มุกมะพร้าว' && cart[n].q >= 50);
@@ -357,29 +409,24 @@
         msg += `📞 เบอร์: ${document.getElementById('c-tel').value}\n`;
         msg += `📍 พิกัดส่ง: https://www.google.com/maps?q=${userPos[0]},${userPos[1]}`;
 
-        // 1. คัดลอกข้อความ
-        navigator.clipboard.writeText(msg).then(() => {
-            // 2. พลุฉลอง
-            confetti({ particleCount: 150, spread: 70, origin: { y: 0.6 }, colors: ['#d4af37', '#06C755', '#ffffff'] });
+        pendingMsg = msg;
 
-            setTimeout(() => {
-                // 3. แจ้งลูกค้า
-                alert("✅ คัดลอกออเดอร์แล้ว!\n\nระบบจะเปิด LINE ร้านให้คุณ ให้คุณกด 'วาง' (Paste) และส่ง 'รูปสลิป' ได้เลยครับ");
-                
-                // 4. บังคับเปิดแอป LINE โดยตรง (ใช้ ti/p/ สำหรับแอดเพื่อน)
-                const lineId = '0809198962';
-                window.location.href = `line://ti/p/~${lineId}`;
-                
-                // Fallback: หากผ่านไป 2 วินาทีแล้วไม่มีแอปเด้ง ให้เปิดหน้าเว็บปกติ
-                setTimeout(() => {
-                    if (document.hasFocus()) {
-                        window.open(`https://line.me/ti/p/~${lineId}`, '_blank');
-                    }
-                }, 2000);
+        const tempTextArea = document.createElement("textarea");
+        tempTextArea.value = msg;
+        document.body.appendChild(tempTextArea);
+        tempTextArea.select();
+        document.execCommand("copy");
+        document.body.removeChild(tempTextArea);
 
-                btn.innerText = oldText;
-            }, 800);
-        });
+        document.getElementById('guide-modal').style.display = 'flex';
+        confetti({ particleCount: 150, spread: 70, origin: { y: 0.6 }, colors: ['#d4af37', '#06C755', '#ffffff'] });
+    }
+
+    function realJumpToLine() {
+        const encodeMsg = encodeURIComponent(pendingMsg);
+        const lineUrl = `https://social-plugins.line.me/lineit/share?text=${encodeMsg}`;
+        window.location.href = lineUrl;
+        document.getElementById('guide-modal').style.display = 'none';
     }
 
     renderMenu();
